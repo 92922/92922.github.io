@@ -754,3 +754,57 @@ ggplot(data = diamonds) +
   geom_boxplot(mapping = aes(x = cut_width(x, 1), y = y)) +
   coord_cartesian(xlim = c(4, 11), ylim = c(4, 11))
 ```
+
+<h1> Important Functions and Notes </h1>
+
+<p>```cut_width```: specify binsize of each cut (often use with geom_boxplot)
+</p>
+<p>
+```cut_number```: specify number of groups to make, allowing for variable binsize (often use with geom_boxplot)
+</p>
+<p>
+```geom_histogram```: key args are bins, binwidth
+</p>
+<p>
+```geom_freqpoly```: for if you want to have overlapping histograms (so outputs lines instead)
+can set y as ..density.. to equalize scale of each (similar to how geom_density does).
+</p>
+<p>
+```geom_boxplot```: adjust outliers with outlier.colour, outlier.fill, …
+</p>
+<p>
+```geom_violin```: Creates double sided histograms for each factor of x
+</p>
+<p>
+```geom_bin2d```: scatter plot of x and y values, but use shading to determine count/density in each point
+</p>
+
+<p>
+```geom_hex```: same as geom_bin2d but hexagon instead of square shapes are shaded in
+</p>
+
+<p>
+```reorder```: arg1 = variable to reorder, arg2 = variable to reorder it by arg3 = function to reorder by (e.g. median, mean, max…)
+</p>
+
+<p>
+```coord_cartesian```: adjust x,y window w/o filtering out values that are excluded from view
+</p>
+
+<p>
+```xlim; ylim```: adjust window and filter out values not within window (same method as scale_x(/y)_continuous)
+these v. coord_cartesian is important for geoms like geom_smooth that aggregate as they visualize
+</p>
+
+<p>
+```ifelse```: vectorized if else (not to be confused with if and else functions)
+</p>
+
+<p>
+```dplyr::if_else``` is more strict alternative
+</p>
+
+<p>
+```case_when```: create new variable that relies on complex combination of existing variables
+often use when you have complex or multiple ifelse statements accruing
+</p>
