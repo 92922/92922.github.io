@@ -1,0 +1,383 @@
+---
+title: "MEE 621 - Activity 5 Data Import"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  html_notebook: default
+---
+
+<h3> This is the answers of the exercise by Junmar Sales II </h3>
+<h3> Email: 92922@usc.edu.ph </h3>
+<h3> Dated 17 October 2020. </h3>
+<h3>  You can also see this on my github pages: <a href="https://92922.github.io/dist/MEE621_DataImport.html" >MEE 621 - Activity 5 on Data Import</a>  </h3>
+
+
+This report on the answers of the exercises outline Activity 4 on Tibbles all done in R Studio.
+
+Let's load the prerequisite libraries, we have assumes that packages has been installed.
+
+```{r}
+library("tidyverse")
+```
+
+<h1> 11.2.2 Exercises </h1>
+
+<h3> 
+1. What function would you use to read a file where fields were separated with
+“|”?
+</h3> 
+
+Use ```read_delim``` for example:
+
+```{r}
+read_delim("a|b|c\n1|2|3", delim = "|")
+```
+
+<h3>
+2. Apart from file , skip , and comment , what other arguments do read_csv() and
+read_tsv() have in common?
+</h3>
+
+We can use the following:
+```col_names```, ```col_types```, ```locale```, ```na```, ```quoted_na```, 
+```quote```, ```trim_ws```, ```skip```, ```n_max```, ```guess_max```, ```progress```
+
+We were able to get it form this code:
+
+```{r}
+intersect(names(formals(read_csv)), names(formals(read_tsv)))
+```
+
+Looking into help, we got: 
+<p>
+- ```col_names``` and ```col_types``` are used to specify the column names and how to parse the columns
+
+- ```locale``` is important for determining things like the encoding and whether “.” or “,” is used as a decimal mark.
+
+- ```na``` and ```quoted_na``` control which strings are treated as missing values when parsing vectors
+
+- ```trim_ws``` trims whitespace before and after cells before parsing
+
+- ```n_max``` sets how many rows to read
+
+- ```guess_max``` sets how many rows to use when guessing the column type
+
+- ```progress``` determines whether a progress bar is shown.
+
+In fact, the two functions have the exact same arguments:
+
+```{r}
+identical(names(formals(read_csv)), names(formals(read_tsv)))
+```
+</p>
+
+<h3>
+3. What are the most important arguments to ```read_fwf()``` ?
+</h3>
+
+Short answer is ```widths```. Some other people choose is ```col_positions``` which tells the function where data columns begin and end.
+
+<h3>
+4. Sometimes strings in a CSV file contain commas. To prevent them from causing problems
+they need to be surrounded by a quoting character, like " or ' . By default,
+read_csv() assumes that the quoting character will be " . What argument to
+read_csv() do you need to specify to read the following text into a data frame?
+
+                  "x,y\n1,'a,b'"
+</h3>
+
+```{r}
+"x,y\n1,'a,b'"
+```
+```{r}
+read_delim("x,y\n1,'a,b'", delim = ",", quote = "'")
+```
+For read_delim(), we will will need to specify a delimiter, in this case ",", and a quote argument.
+
+
+However, this question is out of date. ```read_csv()``` now supports a quote argument, so the following code works.
+
+```{r}
+src <- "x,y\n1,'a,b'"
+read_csv(src, quote = "'")
+```
+
+<h3>
+5. Identify what is wrong with each of the following inline CSV files. What happens when you
+run the code?
+
+       
+         read_csv("a,b\n1,2,3\n4,5,6")
+         read_csv("a,b,c\n1,2\n1,2,3,4")
+         read_csv("a,b\n\"1")
+         read_csv("a,b\n1,2\na,b")
+         read_csv("a;b\n1;3")
+      
+</h3>
+
+
+```{r}
+read_csv("a,b\n1,2,3\n4,5,6")
+```
+
+It needs 3rd column header, skips 3rd argument on each line.
+
+To correct it: 
+
+```{r}
+read_csv("a,b\n1,2\n3,4\n5,6")
+```
+
+```{r}
+read_csv("a,b,c\n1,2\n1,2,3,4")
+```
+
+- There is a missing 3rd value on 2nd line so currently makes NA.
+
+To correct it: 
+
+```{r}
+read_csv("a,b,c\n1,2, 1\n2,3,4")
+```
+
+
+```{r}
+read_csv("a,b\n\"1")
+```
+
+The 2nd value is missing and 2nd quote mark is missing (though quotes are unnecessary).
+
+To correct it: 
+```{r}
+read_csv("a,b\n\"1\",\"2\"")
+```
+
+
+
+```{r}
+read_csv("a,b\n1,2\na,b")
+```
+
+IT has character and numeric types,
+
+```{r}
+read_csv("a;b\n1;3")
+```   
+
+
+There is a need to make read_csv2() because is separated by semicolons.
+
+To correct it: 
+```{r}
+read_csv2("a;b\n1;3")
+```
+
+<h1> 11.3.5 Exercises </h1>
+
+<h3>
+1. What are the most important arguments to locale() ?
+</h3>
+
+It depends on the parse_* type, e.g. 
+
+- for double, e.g. locale = locale(decimal_mark = ",")
+
+- for number, e.g. locale = locale(grouping_mark = ".")
+
+- for character, e.g. locale = locale(encoding = "Latin1")
+
+- for dates, e.g. locale = locale(lang = "fr")
+
+The locale object has arguments to set the following:
+
+- date and time formats: date_names, date_format, and time_format
+
+- time zone: tz
+
+- numbers: decimal_mark, grouping_mark
+
+- encoding: encoding
+
+<h3>
+2. What happens if you try and set decimal_mark and grouping_mark to the same
+character? What happens to the default value of grouping_mark when you set
+decimal_mark to “,”? What happens to the default value of decimal_mark when you
+set the grouping_mark to “.”?
+</h3>
+
+
+If the decimal and grouping marks are set to the same character, locale throws an error:
+
+
+```{r}
+locale(decimal_mark = ",")
+```
+
+If the grouping mark is set to a period, then the decimal mark is set to a comma
+
+```{r}
+locale(grouping_mark = ".")
+```
+*** can’t set both to be same–if you change one, other automatically changes
+
+```{r}
+parse_number("$135.435,45", locale = locale(grouping_mark = ".", decimal_mark = ","))
+```
+```{r}
+parse_number("$135.435,45", locale = locale(grouping_mark = "."))
+```
+
+<h3>
+3. I didn’t discuss the date_format and time_format options to locale() . What do
+they do? Construct an example that shows when they might be useful.
+</h3>
+
+They provide default date and time formats. The readr vignette discusses using these to parse dates: since dates can include languages specific weekday and month names, and different conventions for specifying AM/PM
+
+```{r}
+locale()
+```
+
+
+THe date_format and time_format in locale() will let you set the default date and time formats
+```{r}
+parse_date("31 january 2015", format = "%d %B %Y")
+```
+
+
+
+```{r}
+parse_date("31 january 2015", locale = locale(date_format = "%d %B %Y"))
+```
+
+
+<h3>
+4. If you live outside the US, create a new locale object that encapsulates the settings for
+the types of file you read most commonly.
+</h3>
+
+Yes, I lived outside the US. So I need to read the help page for locale() using ?locale to learn about the different variables that can be set.
+
+As an example, consider Australia. Most of the defaults values are valid, except that the date format is “(d)d/mm/yyyy”, meaning that January 2, 2006 is written as 02/01/2006.
+
+However, default locale will parse that date as February 1, 2006.
+
+```{r}
+parse_date("10/17/2020")
+```
+
+To correctly parse Philippine dates, define a new locale object.
+
+```{r}
+ph_locale <- locale(date_format = "%d/%m/%Y")
+```
+
+Using parse_date() with the au_locale as its locale will correctly parse our example date.
+
+```{r}
+parse_date("17/10/2020", locale = ph_locale)
+```
+
+<h3>
+5. What’s the difference between read_csv() and read_csv2() ?
+</h3>
+
+The delimiter. The function read_csv() uses a comma, while read_csv2() uses a semi-colon (;). Using a semi-colon is useful when commas are used as the decimal point (as in Europe).
+
+
+<h3>
+6. What are the most common encodings used in Europe? What are the most common
+encodings used in Asia? Do some googling to find out.
+</h3>
+
+
+Europe tends to use “%d-%m-%Y”
+Asia tends to use “%d.%m.%Y”
+
+UTF-8 is standard now, and ASCII has been around forever.
+
+For the European languages, there are separate encodings for Romance languages and Eastern European languages using Latin script, Cyrillic, Greek, Hebrew, Turkish: usually with separate ISO and Windows encoding standards. There is also Mac OS Roman.
+
+For Asian languages Arabic and Vietnamese have ISO and Windows standards. The other major Asian scripts have their own:
+
+Japanese: JIS X 0208, Shift JIS, ISO-2022-JP
+Chinese: GB 2312, GBK, GB 18030
+Korean: KS X 1001, EUC-KR, ISO-2022-KR
+The list in the documentation for stringi::stri_enc_detect() is a good list of encodings since it supports the most common encodings.
+
+Western European Latin script languages: ISO-8859-1, Windows-1250 (also CP-1250 for code-point)
+Eastern European Latin script languages: ISO-8859-2, Windows-1252
+Greek: ISO-8859-7
+Turkish: ISO-8859-9, Windows-1254
+Hebrew: ISO-8859-8, IBM424, Windows 1255
+Russian: Windows 1251
+Japanese: Shift JIS, ISO-2022-JP, EUC-JP
+Korean: ISO-2022-KR, EUC-KR
+Chinese: GB18030, ISO-2022-CN (Simplified), Big5 (Traditional)
+Arabic: ISO-8859-6, IBM420, Windows 1256
+For more information on character encodings see the following sources.
+
+The Wikipedia page Character encoding, has a good list of encodings.
+Unicode CLDR project
+What is the most common encoding of each language (Stack Overflow)
+“What Every Programmer Absolutely, Positively Needs To Know About Encodings And Character Sets To Work With Text”, http://kunststube.net/encoding/.
+Programs that identify the encoding of text include:
+
+readr::guess_encoding()
+stringi::str_enc_detect()
+iconv
+chardet (Python)
+
+
+<h3>
+7. Generate the correct format string to parse each of the following dates and times:
+```{r}
+d1 <- "January 1, 2010"
+d2 <- "2015-Mar-07"
+d3 <- "06-Jun-2017"
+d4 <- c("August 19 (2015)", "July 1 (2015)")
+d5 <- "12/30/14" # Dec 30, 2014
+t1 <- "1705"
+t2 <- "11:15:10.12 PM"
+```
+</h3>
+
+Solution:
+
+```{r}
+parse_date(d1, "%B %d, %Y")
+```
+
+
+```{r}
+parse_date(d2, "%Y-%b-%d")
+```
+
+
+```{r}
+parse_date(d3, "%d-%b-%Y")
+```
+
+```{r}
+parse_date(d3, "%d%.%b-%Y") #could use this alternatively
+```
+
+
+```{r}
+parse_date(d4, "%B %d (%Y)")
+```
+
+
+```{r}
+parse_date(d5, "%m/%d/%y")
+```
+
+```{r}
+parse_time(t1, "%H%M")
+```
+
+```{r}
+parse_time(t2, "%I:%M:%OS %p")
+```
+
