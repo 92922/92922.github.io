@@ -1,0 +1,163 @@
+---
+title: "MEE 621 - Activity 4 Tibbles"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  html_notebook: default
+---
+
+<h3> This is the answers of the exercise by Junmar Sales II </h3>
+<h3> Email: 92922@usc.edu.ph </h3>
+<h3> Dated 14 October 2020. </h3>
+<h3>  You can also see this on my github pages: <a href="https://92922.github.io/dist/MEE621_Tibbles.html" >MEE 621 - Activity 4 on Tibbles</a>  </h3>
+
+
+This report on the answers of the exercises outline Activity 4 on Tibbles all done in R Studio.
+
+Let's load the prerequisite libraries, we have assumes that packages has been installed.
+
+```{r}
+library("tidyverse")
+```
+
+<h1>10.5 Exercises </h1>
+
+
+<h2>
+1. How can you tell if an object is a tibble? (Hint: try printing mtcars , which is a regular
+data frame).
+</h2>
+
+
+Let's try to check what the hint suggests by printing ```mtcars```. We noticed it prints all the columns.
+
+```{r}
+mtcars
+
+```
+
+Let's use is_tibble() to check whether a data frame is a tibble or not. .
+
+```{r}
+is_tibble(mtcars)
+
+```
+The mtcars data frame is not a tibble
+
+when we first convert mtcars to a tibble using as_tibble(), it prints only the first ten observations.
+
+```{r}
+as_tibble(mtcars)
+
+```
+
+Furthermore, we could look at printing, e.g. only prints first 10 rows and enough variables where you can see them all, or by checking explicitly the class function.
+
+
+<h2>
+2. Compare and contrast the following operations on a data.frame and equivalent tibble.
+What is different? Why might the default data frame behaviours cause you frustration?
+</h2>
+
+```{r}
+df <- data.frame(abc = 1, xyz = "a")
+df$x
+df[, "xyz"]
+df[, c("abc", "xyz")]
+```
+```{r}
+tbl <- as_tibble(df)
+tbl$x
+tbl[, "xyz"]
+tbl[, c("abc", "xyz")]
+```
+
+The ```$``` operator will match any column name that starts with the name following it. Since there is a column named ```xyz```, the expression ```df$x``` will be expanded to ```df$xyz```. This behavior of the ```$``` operator saves a few keystrokes, but it can result in accidentally using a different column than you thought you were using.
+
+With data.frames, with [ the type of object that is returned differs on the number of columns. If it is one column, it won’t return a data.frame, but instead will return a vector. With more than one column, then it will return a data.frame. This is fine if you know what you are passing in, but suppose you did df[ , vars] where vars was a variable. Then what that code does depends on length(vars) and you’d have to write code to account for those situations or risk bugs.
+
+Therefore:
+Tibbles never change type of input e.g. from strings to factors
+Tibbles never change names of variables, never creates row names
+Tibbles print in a more concise and readable format
+This difference is made more stark if working with list-columns
+
+
+<h2>
+3. If you have the name of a variable stored in an object, e.g. ```var <- "mpg"``` , how can you
+extract the reference variable from a tibble?
+</h2>
+
+You can use the double bracket, like df[[var]]. You cannot use the dollar sign, because ```df$var``` would look for a column named var.
+
+```{r}
+var <- "mpg"
+# Will extract the column as an atomic vector
+df[[var]]
+```
+
+
+<h2>
+4. Practice referring to non-syntactic names in the following data frame by:
+</h2>
+
+```{r}
+df <- tibble(`1` = 1:10, `2` = 11:20)
+```
+
+<h3>1. Extracting the variable called 1 .</h3> 
+
+```{r}
+df %>% 
+  select(1)
+```
+
+<h3>2. Plotting a scatterplot of 1 vs 2 .<h3> 
+
+```{r}
+df %>% 
+  ggplot(aes(x = `1`, y = `2`))+
+  geom_point()
+```
+
+<h3>3. Creating a new column called 3 which is 2 divided by 1 .<h3> 
+
+```{r}
+df %>% 
+  mutate(`3` = `1` / `2`) 
+```
+
+
+<h3>4. Renaming the columns to one , two and three .<h3> 
+
+```{r}
+df %>% 
+  mutate(`3` = `1` / `2`) %>% 
+  rename(one = `1`,
+         two = `2`,
+         three = `3`)
+```
+
+<h2>
+5. What does tibble::enframe() do? When might you use it?
+</h2>
+
+Let’s you encode “name” and “value” as a tibble from a named vector.
+
+```{r}
+tibble::enframe(c(a = 5, b = 8))
+```
+
+
+```{r}
+tibble::enframe(c(a = 5:8, b = 7:10))
+```
+The function tibble::enframe() converts named vectors to a data frame with names and values
+
+<h2>
+6. What option controls how many additional column names are printed at the footer of a
+tibble?
+</h2>
+
+The help page for the print() method of tibble objects is discussed in ?print.tbl. The n_extra argument determines the number of extra columns to print information for.
