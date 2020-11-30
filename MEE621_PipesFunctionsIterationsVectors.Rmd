@@ -1,0 +1,2113 @@
+---
+title: "MEE 621 - Activity 8 Pipes, Functions, Iterations and Vectors"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  html_notebook: default
+---
+
+ <h3> This is the answers of the exercise by Junmar Sales II </h3>
+ <h3> Email: 92922@usc.edu.ph </h3>
+ <h3> Dated 28 November 2020. </h3>
+ <h3>  You can also see this on my github pages: <a href="https://92922.github.io/dist/MEE621_PipesFunctionsIterationsVectors.html" >MEE 621 - Activity 8 on Pipes, Functions, Iterations and Vectors</a>  </h3>
+
+
+<h1 style="color:blue"> INTRODUCTIONS </h1>
+
+<p>
+   At this juncture, We now understand that everything in R is basically a function (or data). That is, they are actions that take a set of inputs and return an output — they are the verbs of our language for constructing sentences. As we proceed to more advance programming with R, we will learn many new functions useful in data science. However, as would-be data scientists we will construct longer sentences that string verbs together to deliver the full power of functions. We combine dedicated and well designed and implemented functions to achieve something more powerful than any single function might be able to achieve on its own.
+</p>
+
+ <h3 style="color:#cc00cc"> On Pipes </h3>
+<p>
+On the first part, we will tackle the concept of pipes as a powerful operator for combining functions to build sentences that can deliver results from complex processing with relative simplicity. For those programmer like me, the pipe will be familiar to those who have used the Unix and Linux operating systems. The idea is to pass the output of one function on to another function as that function’s input throug a sequence of steps. Each function does one task and aims to do that task very well, very accurately, and very simply from a user’s point of view. We can then string together many such specialist functions to deliver very complex and quite sophisticated data transformations in an easily accessible manner. Pipes are available in R through the magrittr.
+</p>
+
+
+ <h3 style="color:#cc00cc"> On Iterations and Vectors </h3>
+
+<p>
+In advance programming, data structures are used to store data in an organized fashion in order to make data manipulation and other data operations more efficient. Vector is one of the basic data structures in R programming. It is homogenous in nature, which means that it only contains elements of the same data type. Data types can be numeric, integer, character, complex or logical. The vector in R programming is created using the c() function. Coercion takes place in a vector from lower to top, if the elements passed are of different data types from Logical to Integer to Double to Character. The typeof() function is used to check the data type of the vector, and class() function is used to check the class of a vector.
+</p>
+
+<p>
+Iteration is core to many calculations.  The use of iteration in R is common, but as an experienced programmer, it should be avoided whenever possible given vectorized methods that often achieve the same goal. Iteration, or traditional looping, is a brute force approach to data management that is effective, but costly.  Every time a large data set enters an iteration loop, a copy of the data is saved to disk.  Thus, iteration consumes time and memory. But for this activity, we will explore why we need iteration for the sake of getting the pros and cons. </p>
+
+
+<h1 style="color:blue"> ANSWERS TO EXERCISES AND DISCUSSIONS  </h1>
+
+Let's load the prerequisite libraries, we have assumes that packages has been installed.
+
+```{r}
+library(magrittr)
+library(lubridate)
+library(tidyverse)
+```
+
+
+<h2 style="color:#ff6600"> A. Activity 8.1 </h2>
+
+
+<strong>  No Exercises </strong>
+
+Just my notes on this activity:
+
+<p>
+(1) ```pryr::object_size ```gives the memory occupied by all of its arguments (note that built-in object.size does not allow measuring multiple objects so can’t see shared space). This function is actually shown in this particular activity.
+</p>
+<p>
+(2) Some functions do not work naturally with the pipe.
+
+If you want to use ```assign``` with the pipe, you must be explicit about the environment
+
+```
+env <- environment()
+assign("x", 100, envir = env)
+```
+
+(3) ```try```, ```tryCatch```, ```suppressMessages```, and ```suppressWarnings``` from base R all also do not work well
+</p>
+
+Other pipes = ‘T pipe’,``` %T>% ```that returns left-hand side rather than right. Will let the plot output, but then continues. Notice that this doesn’t work quite the same way for ggplot as ggplot does output something
+
+```{r}
+rnorm(100) %>%
+  matrix(ncol = 2) %T>%
+  plot() %>% 
+  str()
+```
+<p>
+In summary for this activity, we can say that R programming includes pipes denoted by %>% in your script. The idea is to take whatever function/value is on the left-hand side of the pipe and transfer that to the function/value on the right-hand side.
+</p>
+
+
+<h2 style="color:#ff6600"> B. Activity 8.2 </h2>
+
+
+ <h3 style="color:#cc00cc"> 19.2.1 Exercises </h3>
+
+<h4 style="color:#40bf40">
+1. Why is TRUE not a parameter to rescale01()? What would happen
+if x contained a single missing value, and na.rm was FALSE?
+</h4>
+
+
+```{r}
+rescale01 <- function(x) {
+  rng <- range(x, na.rm = FALSE)
+  (x - rng[1]) / (rng[2] - rng[1])
+}
+rescale01(c(-1, 0, 5, 20, NA))
+```
+Everything is NA! We should set an argument to control the `TRUE` or `FALSE` of `range`
+
+
+
+<h4 style="color:#40bf40">
+2. In the second variant of rescale01(), infinite values are left
+unchanged. Rewrite rescale01() so that -Inf is mapped to 0,
+and Inf is mapped to 1.
+</h4>
+
+
+```{r}
+rescale01 <- function(x) {
+  rng <- range(x, na.rm = TRUE, finite = TRUE)
+  (x - rng[1]) / (rng[2] - rng[1])
+  x[x == Inf] <- 1
+  x[x == -Inf] <- 0
+  x
+}
+rescale01(c(Inf, -Inf, 0:5, NA))
+```
+
+
+
+<h4 style="color:#40bf40">
+3. Practice turning the following code snippets into functions.
+Think about what each function does. What would you call it?
+How many arguments does it need? Can you rewrite it to be
+more expressive or less duplicative?
+</h4>
+
+```
+mean(is.na(x))
+x / sum(x, na.rm = TRUE)
+sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE)
+
+x <- 1:10
+mean(is.na(x))
+
+x / sum(x, na.rm = TRUE)
+sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE)
+
+```
+
+Here is my take on implementation:
+```{r}
+prop_miss <- function(x) {
+  mean(is.na(x))
+}
+my_mean <- function(x, na.rm = FALSE) {
+  x / sum(x, na.rm = na.rm)
+}
+my_var <- function(x,na.rm = FALSE) {
+  sd(x, na.rm = na.rm) / mean(x, na.rm = na.rm)
+}
+
+```
+
+This code calculates the proportion of NA values in a vector.
+
+```
+mean(is.na(x))
+```
+
+I will write it as a function named prop_miss() that takes a single argument x, and returns a single numeric value between 0 and 1.
+
+```{r}
+prop_miss <- function(x) {
+  mean(is.na(x))
+}
+prop_miss(c(0, 1, 2, NA, 4, NA))
+```
+
+This code standardizes a vector so that it sums to one.
+
+```
+x / sum(x, na.rm = TRUE)
+```
+
+I’ll write a function named my_mean(), which is a function of a single argument, x, the vector to standardize, and an optional argument na.rm. The optional argument, na.rm, makes the function more expressive, since it can handle NA values in two ways (returning NA or dropping them). 
+
+Additionally, this makes my_mean() consistent with sum(), mean(), and many other R functions which have a na.rm argument. While the example code had na.rm = TRUE, I set na.rm = FALSE by default in order to make the function behave the same as the built-in functions like sum() and mean() in its handling of missing values.
+
+```{r}
+my_mean <- function(x, na.rm = FALSE) {
+  x / sum(x, na.rm = na.rm)
+}
+```
+
+```{r}
+# no missing values
+my_mean(1:5)
+```
+
+```{r}
+# if any missing, return all missing
+my_mean(c(1:5, NA))
+```
+
+```{r}
+# drop missing values when standardizing
+my_mean(c(1:5, NA), na.rm = TRUE)
+```
+This code calculates the coefficient of variation (assuming that x can only take non-negative values), which is the standard deviation divided by the mean.
+
+```
+sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE)
+```
+I’ll write a function named my_var(), which takes a single argument x, and an optional na.rm argument.
+
+```{r}
+my_var <- function(x, na.rm = FALSE) {
+  sd(x, na.rm = na.rm) / mean(x, na.rm = na.rm)
+}
+my_var(1:5)
+
+my_var(c(1:5, NA))
+
+my_var(c(1:5, NA), na.rm = TRUE)
+
+```
+
+
+Write both_na(), a function that takes two vectors of the same length and returns the number of positions that have an NA in both vectors.
+
+```{r}
+both_na <- function(x, y) {
+  stopifnot(length(x) == length(y))
+  which(is.na(x) & is.na(y))
+}
+both_na(c(1, 2, NA, 2, NA), c(1, 2, 3, 4, NA))
+```
+
+
+<h4 style="color:#40bf40">
+4. Follow http://nicercode.github.io/intro/writing-functions.html to
+write your own functions to compute the variance and skew of a
+numeric vector.
+</h4>
+
+Let's install needed dependencies - or the first time.
+```{r}
+#install.packages('e1071', dependencies=TRUE)
+```
+
+Re-do below to write measures for skew and variance (e.g. kurtosis, etc.)
+
+```{r}
+var_bry <- function(x){
+  sum((x - mean(x)) ^ 2) / (length(x) - 1)
+}
+
+skewness_bry <- function(x) {
+  mean((x - mean(x)) ^ 3) / var_bry(x) ^ (3 / 2)
+}
+```
+
+
+Let’s create some samples of distributions – normal, t (with 7 degrees of freedom), unifrom, poisson (with lambda of 2).
+
+```{r}
+nd <- rnorm(10000)
+td_df7 <- rt(10000, df = 7)
+ud <- runif(10000)
+pd_l2 <- rpois(10000, 2)
+```
+
+Verify that these functions match with established functions
+
+```{r}
+dplyr::near(skewness_bry(pd_l2), e1071::skewness(pd_l2, type = 3))
+```
+```{r}
+dplyr::near(var_bry(pd_l2), var(pd_l2))
+```
+
+Let’s look at the distributions as well as their variance an skewness
+
+```{r}
+
+distributions_df <- tibble(normal_dist = nd,
+       t_7df_dist = td_df7,
+       uniform_dist = ud,
+       poisson_dist = pd_l2)
+
+distributions_df %>% 
+  gather(normal_dist:poisson_dist, value = "sample", key = "dist_type") %>% 
+  mutate(dist_type = factor(forcats::fct_inorder(dist_type))) %>% 
+  ggplot(aes(x = sample))+
+  geom_histogram()+
+  facet_wrap(~ dist_type, scales = "free")
+```
+
+
+```{r}
+tibble(dist_type = names(distributions_df),
+skewness = purrr::map_dbl(distributions_df, skewness_bry), 
+variance = purrr::map_dbl(distributions_df, var_bry))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+<h4 style="color:#40bf40">
+5. Write both_na(), a function that takes two vectors of the same
+length and returns the number of positions that have an NA in
+both vectors.
+</h4>
+
+```{r}
+both_na <- function(x, y) {
+  if (length(x) == length(y)) {
+  sum(is.na(x) & is.na(y))
+  } else
+  stop("Vectors are not equal length")
+}
+
+x <- c(4, NA, 7, NA, 3)
+y <- c(NA, NA, 5, NA, 0)
+z <- c(NA, 4)
+```
+
+```{r}
+both_na(x, y)
+```
+Just to check what if vector parameters are not same in length.
+```
+both_na(x, z)
+#Error in both_na(x, z) : Vectors are not equal length
+```
+
+
+<h4 style="color:#40bf40">
+6. What do the following functions do? Why are they useful even
+though they are so short?
+```
+is_directory <- function(x) file.info(x)$isdir
+is_readable <- function(x) file.access(x, 4) == 0
+```
+</h4>
+
+The function is_directory() checks whether or not the path in x is actually a directory. The function is_readable() checks whether or not a specific file path in x is readable, meaning that the file exists and the user has permission to open it. These functions are useful even though they are short because their names make it much clearer what the code is doing.
+
+
+<h4 style="color:#40bf40">
+7. Read the complete lyrics to “Little Bunny Foo Foo.” There’s a lot
+of duplication in this song. Extend the initial piping example to
+re-create the complete song, and use functions to reduce the
+duplication.
+</h4>
+
+
+The lyrics of one of the most common versions of this song are
+```
+Little bunny Foo Foo
+Hopping through the forest
+Scooping up the field mice
+And bopping them on the head
+
+Down came the Good Fairy, and she said
+"Little bunny Foo Foo
+I don’t want to see you   Scooping up the field mice
+
+And bopping them on the head.
+I’ll give you three chances,
+And if you don’t stop, I’ll turn you into a GOON!"
+And the next day…
+```
+
+The verses repeat with one chance fewer each time. When there are no chances left, the Good Fairy says
+
+```
+“I gave you three chances, and you didn’t stop; so….”
+POOF. She turned him into a GOON!
+And the moral of this story is: hare today, goon tomorrow.
+```
+
+Here’s my take on writing this
+
+```{r}
+threat <- function(chances) {
+  give_chances(
+    from = Good_Fairy,
+    to = foo_foo,
+    number = chances,
+    condition = "Don't behave",
+    consequence = turn_into_goon
+  )
+}
+
+lyric <- function() {
+  foo_foo %>%
+    hop(through = forest) %>%
+    scoop(up = field_mouse) %>%
+    bop(on = head)
+
+  down_came(Good_Fairy)
+  said(
+    Good_Fairy,
+    c(
+      "Little bunny Foo Foo",
+      "I don't want to see you",
+      "Scooping up the field mice",
+      "And bopping them on the head."
+    )
+  )
+}
+```
+
+```
+lyric()
+threat(3)
+lyric()
+threat(2)
+lyric()
+threat(1)
+lyric()
+turn_into_goon(Good_Fairy, foo_foo)
+```
+
+ <h3 style="color:#cc00cc"> 19.3.1 Exercises </h3>
+
+
+<h4 style="color:#40bf40"> 1. Read the source code for each of the following three functions, puzzle out what they do, and then brainstorm better names.
+
+```{r}
+f1 <- function(string, prefix) {
+  substr(string, 1, nchar(prefix)) == prefix
+}
+f2 <- function(x) {
+  if (length(x) <= 1) return(NULL)
+  x[-length(x)]
+}
+f3 <- function(x, y) {
+  rep(y, length.out = length(x))
+}
+```
+</h4>
+
+The function f1 tests whether each element of the character vector ```nchar``` starts with the string prefix. For example,
+
+```{r}
+f1(c("abc", "abcde", "ad"), "ab")
+```
+<p>
+A better name for f1 functions should be  ```check_prefix()```
+</p>
+
+<p>
+The function f2 drops the last element of the vector x.
+</p>
+
+```{r}
+f2(1:3)
+```
+```{r}
+f2(1:2)
+```
+
+```{r}
+f2(1)
+```
+<p>
+A better name for f2 is return_not_last().
+</p>
+
+
+<p>
+The function f3 repeats y once for each element of x.
+</p>
+
+```{r}
+f3(1:3, 4)
+```
+<p>
+Good names would include ```recycle()``` (R’s name for this behavior) or ```expand()``` or ```repeat_for_length()```.
+</p>
+
+
+<h4 style="color:#40bf40"> 2.Take a function that you’ve written recently and spend 5 minutes brainstorming a better name for it and its arguments.
+</h4>
+
+
+<p>
+Choosing a good function names, in my experiences, involves using a verb which translate or perhaps illutrates what the function is doing. Like for examples, we have written about checking prefixes, I usually choose ```check_prefixes``` as appropriate functions names to showcase what it really does.
+</p>
+
+
+<h4 style="color:#40bf40"> 3.Compare and contrast ```rnorm()``` and ```MASS::mvrnorm()```. How could you make them more consistent?
+</h4>
+
+```{r}
+help(rnorm)
+```
+
+```{r}
+help(mvrnorm)
+```
+
+```mvrnorm()``` function uses mu = and Sigma = as parameters instead of mean = and sd =  in ```rnorm()```, and has extra parameters like tol, empirical, EISPACK
+
+<p>
+To be consistent they should have the same names. However, this is difficult. In general, it is better to be consistent with more widely used functions, e.g. rmvnorm() should follow the conventions of rnorm(). However, while mean is correct in the multivariate case, sd does not make sense in the multivariate case. However, both functions are internally consistent. It would not be good practice to have mu and sd as arguments or mean and Sigma as arguments.
+</p>
+
+<h4 style="color:#40bf40"> 4.Make a case for why ```norm_r()```, ```norm_d()``` etc would be better than ```rnorm()```, ```dnorm()```. Make a case for the opposite.
+</h4>
+
+<p>
+```norm_*``` would show the commonality of them being from the same distribution. One could argue the important commonality though may be more related to it being either a random sample or a density distribution, in which case the ```r*``` or ```d*``` coming first may make more sense. To me, the fact that the help pages has all of the ‘normal distribution’ functions on the same page suggests the former may make more sense. However, I actually like having it be set-up the way it is, because I am more likely to forget the name of the distribution type I want over the fact that I want a random sample, so it’s easier to type r and then do ctrl + space and have autocomplete help me find the specific distribution I want, e.g. ```rnorm```, ```runif```, ```rpois```, ```rbinom```…
+</p>
+
+
+ <h3 style="color:#cc00cc"> 19.4.4 Exercises </h3>
+
+
+<h4 style="color:#40bf40"> 1. What’s the difference between if and ifelse()? Carefully read the help and construct three examples that illustrate the key differences.
+</h4>
+Short Answer (in simple programming):
+
+The keyword ```if``` tests a <u>single</u> condition, while ```ifelse()``` tests <u>each element</u>.
+
+Longer Answer (for complex):
+<div> 
+</p>
+- ```ifelse``` is vectorized while ```if``` is not
+</p>
+<div> - Typically use if in functions when giving conditional options for how to evaluate</div>
+<div> - Typically use ifelse when changing specific values in a vector</div>
+<p>
+- If you supply if with a vector of length > 1, it will use the first value
+</p>
+</div> 
+
+```{r}
+x <- c(3, 4, 6)
+y <- c("5", "c", "9")
+
+# Use `ifelse` simple transformations of values
+ifelse(x < 5, 0, x)
+```
+
+```{r}
+# Use `if` for single condition tests
+cutoff_make0 <- function(x, cutoff = 0){
+  if(is.numeric(x)){
+    ifelse(x < cutoff, 0, x)
+  } else stop("The input provided is not a numeric vector")
+}
+
+cutoff_make0(x, cutoff = 4)
+```
+
+```
+cutoff_make0(y, cutoff = 4)
+```
+
+
+<h4 style="color:#40bf40"> 2. Write a greeting function that says “good morning”, “good afternoon”, or “good evening”, depending on the time of day. (Hint: use a time argument that defaults to ```lubridate::now()```. That will make it easier to test your function.)
+</h4>
+
+```{r}
+greeting <- function(when = lubridate::now()) {
+
+  time <- hour(when)
+
+  if (time < 12 && time > 4) 
+  {
+    greeting <- "good morning"
+  } 
+  else if (time < 17 && time >= 12) 
+  {
+    greeting <- "good afternoon"
+  } 
+  else
+  {
+    greeting <- "good evening"
+  }
+  when_char <- as.character(when)
+  mid <- ", it is: "
+  cat(greeting, mid, when_char, sep = "")
+}
+```
+Let's call it and see it's output:
+
+```{r}
+greeting()
+```
+```{r}
+greeting(ymd_h("2017-01-08:05"))
+
+```
+
+```{r}
+greeting(now())
+```
+
+
+<h4 style="color:#40bf40">
+3. Implement a fizzbuzz function. It takes a single number as input. If the number is divisible by three, it returns “fizz”. If it’s divisible by five it returns “buzz”. If it’s divisible by three and five, it returns “fizzbuzz”. Otherwise, it returns the number. Make sure you first write working code before you create the function.
+</h4>
+
+<p>
+There are four cases to consider:
+
+1. If x is divisible by 3 and 5, then return “fizzbuzz”.
+2. If x is divisible by 3 and not 5, then return “fizz”.
+3. If x is divisible by 5 and not 3, then return “buzz”.
+4. Otherwise, which is the case in which x is not divisible by either 3 or 5, return x.
+</p>
+
+My implementation:
+```{r}
+fizzbuzz <- function(x){
+  if(is.numeric(x) && length(x) == 1){
+    y <- ""
+    if (x %% 5 == 0) y <- str_c(y, "fizz")
+    if (x %% 3 == 0) y <- str_c(y, "buzz")
+    if (str_length(y) == 0) {
+      print(x)
+    } else print(y)
+  } else stop("Input is not a numeric vector with length 1")
+}
+```
+
+Let's validate the implementation for case 4.
+```{r}
+fizzbuzz(4)
+```
+We are correct since it returns the x, the number.
+
+Let's validate the implementation for case 2 using x=10.
+```{r}
+fizzbuzz(10)
+```
+Let's validate the implementation for case 3 using x=6.
+```{r}
+fizzbuzz(6)
+```
+Let's validate the implementation for case 1 using x=30.
+```{r}
+fizzbuzz(30)
+```
+VAlidating if input is not numeric, it should return error.
+```
+fizzbuzz(c(34, 21))
+```
+<h4 style="color:#40bf40">
+4. How could you use cut() to simplify this set of nested if-else statements?
+
+```
+if (temp <= 0) {
+  "freezing"
+} else if (temp <= 10) {
+  "cold"
+} else if (temp <= 20) {
+  "cool"
+} else if (temp <= 30) {
+  "warm"
+} else {
+  "hot"
+}
+```
+
+Below is example of a fix:
+
+```{r}
+temp <- seq(-10, 50, 5)
+cut(temp, 
+    breaks = c(-Inf, 0, 10, 20, 30, Inf),  #need to include negative and positive infinity
+    labels = c("freezing", "cold", "cool", "warm", "hot"),
+    right = TRUE,
+    oredered_result = TRUE)
+```
+<h4 style="color:#40bf40"> How would you change the call to cut() if I’d used < instead of <=? What is the other chief advantage of cut() for this problem? (Hint: what happens if you have many values in temp?)
+</h4>
+
+To have intervals open on the left (using <), I change the argument to right = FALSE,
+
+```{r}
+temp <- seq(-10, 50, 5)
+cut(temp, 
+    breaks = c(-Inf, 0, 10, 20, 30, Inf),  #need to include negative and positive infinity
+    labels = c("freezing", "cold", "cool", "warm", "hot"),
+    right = FALSE,
+    ordered_result = TRUE)
+```
+Two advantages of using ```cut``` is that it works on vectors, whereas if only works on a single value, and that to change comparisons I only needed to change the argument to right, but I would have had to change four operators in the if expression.
+
+
+<h4 style="color:#40bf40">
+5. What happens if you use switch() with numeric values?
+</h4>
+
+- It will return the index of the argument.
+In example below, I input ‘3’ into switch value so it does the times argument
+
+
+```{r}
+math_operation <- function(x, y, op){
+   switch(op,
+     plus = x + y,
+     minus = x - y,
+     times = x * y,
+     divide = x / y,
+     stop("Unknown op!")
+   )
+  }
+```
+
+Let's call it.
+```{r}
+math_operation(5, 4, 3)
+```
+Note that ```switch()``` truncates the numeric value, it does not round to the nearest integer. While it is possible to use non-integer numbers with switch(), you should avoid it
+
+
+<h4 style="color:#40bf40">
+6.What does this switch() call do? What happens if x is “e”?
+
+
+```{r}
+x <- "e"
+
+switch(x, 
+  a = ,
+  b = "ab",
+  c = ,
+  d = "cd"
+)
+```
+Experiment, then carefully read the documentation.
+</h4>
+
+- If x is ‘e’ nothing will be outputted. If x is ‘c’ or ‘d’ then ‘cd’ is outputted. If ‘a’ or ‘b’ then ‘ab’ is outputeed. If blank it will continue down list until reaching an argument to output.
+
+
+
+ <h3 style="color:#cc00cc"> 19.5.5 Exercises </h3>
+
+<u>NOTES to myself for this exercise:</u>
+<p>
+Common non-descriptive short argument names:
+
+- ```x```, ```y```, ```z```: vectors.
+- ```w```: a vector of weights.
+- ```df```: a data frame.
+- ```i```, ```j```: numeric indices (typically rows and columns).
+- ```n```: length, or number of rows.
+- ```p```: number of columns.
+
+</p>
+
+
+
+<h4 style="color:#40bf40"> 
+1. What does commas(letters, collapse = "-") do? Why?
+</h4>
+
+- commas function is below
+
+```{r}
+commas <- function(...) stringr::str_c(..., collapse = ", ")
+
+commas(letters[1:10])
+```
+```
+commas(letters[1:10], collapse = "-")
+```
+- The above fails because they are essentially specifying two different values for the collapse argument
+- Takes in vector of multiple strings and outputs one-unit character string with items concatenated together and separated by columns
+- Is able to do this via use of ... that turns this into a wrapper on ```stringr::str_c``` with the collapse value specified
+
+<h4>
+2. It’d be nice if you could supply multiple characters to the pad argument, e.g. rule("Title", pad = "-+"). Why doesn’t this currently work? How could you fix it?
+</h4>
+
+- current ```rule``` function is below
+```{r}
+rule <- function(..., pad = "-") {
+  title <- paste0(...)
+  width <- getOption("width") - nchar(title) - 5
+  cat(title, " ", stringr::str_dup(pad, width), "\n", sep = "")
+}
+
+
+# Note that `cat` is used instead of `paste` because paste would output it as a character vector, whereas `cat` is focused on just ouptut, could also have used `print`, though print does more conversion than cat does (apparently)
+
+rule("Christmas is the season"," to be jolly")
+```
+
+- It doesn’t work because pad ends-up being too many characters in this situation
+
+```{r}
+rule("Christmas is the season"," to be jolly", pad="+-")
+```
+
+- instead would need to make the number of times pad is duplicated dependent on its length, see below for fix
+```{r}
+rule_pad_fix <- function(..., pad = "-") {
+  title <- paste0(...)
+  width <- getOption("width") - nchar(title) - 5
+  width_fix <- width %/% stringr::str_length(pad)
+  cat(title, " ", stringr::str_dup(pad, width_fix), "\n", sep = "")
+}
+
+rule_pad_fix("Christmas is the season"," to be jolly", pad="+-")
+```
+
+<h4>
+3. What does the trim argument to mean() do? When might you use it?
+</h4>
+
+The ```trim``` arguments trims a fraction of observations from each end of the vector (meaning the range) before calculating the mean. This is useful for calculating a measure of central tendency that is robust to outliers.
+
+The ```trim``` specifies proportion of data to take off from both ends, good with outliers. Below is an examole.
+
+```{r}
+mean(c(-1000, 1:100, 100000), trim = .025) 
+```
+
+<h4>
+4. The default value for the method argument to cor() is c("pearson", "kendall", "spearman"). What does that mean? What value is used by default?
+</h4>
+
+It means that you can choose from any of these values, but it will default to use "pearson" (value in first position)
+
+
+<h2 style="color:#ff6600"> C. Activity 8.3 </h2>
+
+
+<h3 style="color:#cc00cc"> 20.3.5 Exercises </h3>
+
+<h4 style="color:#40bf40">
+1. Describe the difference between ```is.finite(x)``` and ```!is.infinite(x)```.
+</h4>
+
+- ```is.finite``` and ```is.infinite``` return FALSE for NA or NaN values, therefore these values become TRUE when negated as in the latter case, e.g.:
+```{r}
+is.finite(c(6,11,-Inf, NA, NaN))
+```
+
+```{r}
+!is.infinite(c(6,11,-Inf, NA, NaN))
+```
+
+The ```is.finite()``` function considers non-missing numeric values to be finite, and missing ```(NA)```, not a number (```NaN```), and positive (```Inf```) and negative infinity (```-Inf```) to not be finite. The ```is.infinite()``` behaves slightly differently. It considers ```Inf``` and ```-Inf``` to be infinite, and everything else, including non-missing numbers, NA, and NaN to not be infinite.
+
+
+
+<h4 style="color:#40bf40">
+2. Read the source code for ```dplyr::near()``` (Hint: to see the
+source code, drop the ()). How does it work?
+</h4>
+
+Let's check what is inside ```dplyr::near```;
+```{r}
+dplyr::near
+````
+
+- It looks like it is a safer way to test equality of floating point numbers (as has some tolerance for differences caused by rounding)
+- it also checks if the difference between the value is within ```tol``` which by default is ```.Machine$double.eps^0.5```
+
+
+<h4 style="color:#40bf40">
+3. A logical vector can take three possible values. How many possible
+values can an integer vector take? How many possible values
+can a double take? Use Google to do some research.
+</h4>
+
+Part of the point here is that it’s not ‘infinite’ like someone may be tempted to answer – it’s constrained by <b><u>memory of the machine</u></b>
+
+From the help for ```integer```, we can deduced that interger vector can take up to 2 * 2 * 10^9.
+
+```
+Note that current implementations of R use 32-bit integers for integer vectors, so the range of representable integers is restricted to about +/-2*10^9: doubles can hold much larger integers exactly.
+```
+
+For double vectors, R uses a 64-bit representation. This means that they can hold up to  
+2^64  values exactly. However, some of those values are allocated to special values such as -Inf, Inf, NA_real_, and NaN. From the help for double:
+
+```
+All R platforms are required to work with values conforming to the IEC 60559 (also known as IEEE 754) standard. This basically works with a precision of 53 bits, and represents to that precision a range of absolute values from about 2e-308 to 2e+308. It also has special values NaN (many of them), plus and minus infinity and plus and minus zero (although R acts as if these are the same). There are also denormal(ized) (or subnormal) numbers with absolute values above or below the range given above but represented to less precision.
+```
+
+Thus, double vector can only hold up to 2 * 2 * 10^308.
+
+<h4 style="color:#40bf40">
+4. Brainstorm at least four functions that allow you to convert a
+double to an integer. How do they differ? Be precise.
+</h4>
+
+To do this ```as.integer```, ```as.factor``` (technically is going to a factor – but this class is built on top of integers), ```round```, ```floor```, ```ceiling```, these last 3 though do not change the type, which would remain a type ```double```. We can check help.
+
+Let's have a sample function.
+
+```{r}
+function(x, method) {
+  if (method == "round down") {
+    floor(x)
+  } else if (method == "round up") {
+    ceiling(x)
+  } else if (method == "round towards zero") {
+    trunc(x)
+  } else if (method == "round away from zero") {
+    sign(x) * ceiling(abs(x))
+  } else if (method == "nearest, round half up") {
+    floor(x + 0.5)
+  } else if (method == "nearest, round half down") {
+    ceiling(x - 0.5)
+  } else if (method == "nearest, round half towards zero") {
+    sign(x) * ceiling(abs(x) - 0.5)
+  } else if (method == "nearest, round half away from zero") {
+    sign(x) * floor(abs(x) + 0.5)
+  } else if (method == "nearest, round half to even") {
+    round(x, digits = 0)
+  } else if (method == "nearest, round half to odd") {
+    case_when(
+      # smaller integer is odd - round half down
+      floor(x) %% 2 ~ ceiling(x - 0.5),
+      # otherwise, round half up 
+      TRUE ~ floor(x + 0.5)
+    )
+  } else if (method == "nearest, round half randomly") {
+    round_half_up <- sample(c(TRUE, FALSE), length(x), replace = TRUE)
+    y <- x
+    y[round_half_up] <- ceiling(x[round_half_up] - 0.5)
+    y[!round_half_up] <- floor(x[!round_half_up] + 0.5)
+    y
+  }
+}
+```
+
+
+<h4 style="color:#40bf40">
+5. What functions from the readr package allow you to turn a
+string into a logical, integer, and double vector?
+</h4>
+
+- The function ```parse_logical()``` parses logical values, which can appear as variations of TRUE/FALSE or 1/0.
+- The function ```parse_integer()``` parses integer values.
+- The function ```parse_number()``` parses numeric values. 
+
+Thus,
+
+The appropriate ```parse_*``` or ```col_*``` functions can allow to turn string into logical, integer, double vector.
+
+ <h3 style="color:#cc00cc"> 20.4.6 Exercises </h3>
+
+<h4 style="color:#40bf40">
+1. What does mean(is.na(x)) tell you about a vector x? What
+about sum(!is.finite(x))?
+</h4>
+
+
+I’ll use the numeric vector x to compare the behaviors of ```is.na()``` and ```is.finite()```. It contains numbers (-1, 0, 1) as well as all the special numeric values: infinity (```Inf```), missing (```NA```), and not-a-number (```NaN```).
+
+```{r}
+x <- c(-Inf, -1, 0, 1, Inf, NA, NaN)
+```
+
+The expression ```mean(is.na(x))``` calculates the proportion of missing (```NA```) and not-a-number ```NaN``` values in a vector:
+
+```{r}
+mean(is.na(x))
+```
+
+The result of 0.286 is equal to 2 / 7 as expected. There are seven elements in the vector x, and two elements that are either ```NA``` or ```NaN```.
+
+The expression ```sum(!is.finite(x))``` calculates the number of elements in the vector that are equal to missing (```NA```), not-a-number (```NaN```), or infinity (```Inf```).
+
+```{r}
+sum(!is.finite(x))
+```
+
+<h4 style="color:#40bf40">
+2. Carefully read the documentation of is.vector(). What does it
+actually test for? Why does is.atomic() not agree with the definition
+of atomic vectors above?
+</h4>
+
+- ```is.vector``` tests if it is a specific type of vector with no attributes other than names. This second requirement means that any augmented vectors such as factors, dates, tibbles all would return false.
+
+- ```is.atomic``` returns ```TRUE``` to ```is.atomic(NULL)``` despite this representing the empty set.
+
+The function ```is.atomic()``` explicitly checks whether an object is one of the atomic types (“logical”, “integer”, “numeric”, “complex”, “character”, and “raw”) or NULL.
+```{r}
+is.atomic(1:10)
+```
+
+```{r}
+is.atomic(list(a = 1))
+```
+
+The function ```is.atomic()``` will consider objects to be atomic even if they have extra attributes.
+
+```{r}
+is.atomic(x)
+```
+
+<h4 style="color:#40bf40">
+3. Compare and contrast setNames() with purrr::set_names().
+</h4>
+
+- Both functions assign names after fact
+- However, ```purrr::set_names``` is stricter and returns an error in situations like the following where as ```setNames``` does not:
+
+```{r}
+setNames(1:4, c("a"))
+```
+```
+set_names(1:4, c("a")) 
+```
+
+RUnning this snippet will show the following error:
+```
+Error: `nm` must be `NULL` or a character vector the same length as `x`
+```
+
+<h4 style="color:#40bf40">
+4. Create functions that take a vector as input and return:
+a. The last value. Should you use [ or [[?
+b. The elements at even numbered positions.
+c. Every element except the last value.
+d. Only even numbers (and no missing values).
+</h4>
+
+```{r}
+x <- c(-3:14, NA, Inf, NaN)
+```
+
+<b> a. The last value. Should you use [ or [[? </b>
+
+```{r}
+return_last <- function(x) x[[length(x)]]
+```
+
+```{r}
+return_last(x)
+```
+he function uses [[ in order to extract a single element.
+
+<b> b.The elements at even numbered positions.</b>
+```{r}
+return_even <- function(x) x[((1:length(x)) %% 2 == 0)]
+```
+
+```{r}
+return_even(x)
+```
+
+
+<b> c. Every element except the last value. </b>
+
+```{r}
+return_not_last <- function(x) x[-length(x)]
+```
+
+```{r}
+return_not_last(x)
+```
+We should also confirm that the function works with some edge cases, like a vector with one element, and a vector with zero elements.
+
+```{r}
+return_not_last(1)
+```
+```{r}
+return_not_last(numeric())
+```
+In both these cases, ```return_not_last()``` correctly returns an empty vector.
+
+<b> d. Only even numbers (and no missing values). </b>
+#only even and not na
+```{r}
+return_even_no_na <- function(x) x[((1:length(x)) %% 2 == 0) & !is.na(x)]
+
+return_even_no_na(x)
+```
+We could improve this function by handling the special numeric values: NA, NaN, Inf. However, first we need to decide how to handle them. 
+
+<h4 style="color:#40bf40">
+5. Why is x[-which(x > 0)] not the same as x[x <= 0]?
+</h4>
+
+```{r}
+x[-which(x > 0)]  #which only reports the indices of the matches, so specifies all to be removed
+```
+
+```{r}
+x[x <= 0]  #This method reports T/F'sNaN is converted into NA
+```
+The expressions ```x[-which(x > 0)]``` and ```x[x <= 0]``` return the same values except for a ```NaN``` instead of an ```NA``` in the expression using which.
+
+
+<h4 style="color:#40bf40">
+6. What happens when you subset with a positive integer that’s
+bigger than the length of the vector?
+</h4>
+
+Let’s consider the named vector,
+```{r}
+x <- c(a = 10, b = 20)
+```
+
+If we subset it by an integer larger than its length, it returns a vector of missing values.
+```{r}
+x[3]
+```
+
+This also applies to ranges.
+```{r}
+x[3:5]
+```
+
+If some indexes are larger than the length of the vector, those elements are NA.
+```{r}
+x[1:5]
+```
+Likewise, when [ is provided names not in the vector’s names, it will return NA for those elements.
+
+```{r}
+x["c"]
+```
+```{r}
+x[c("c", "d", "e")]
+```
+```{r}
+x[c("a", "b", "c")]
+```
+
+Though not yet discussed much in this chapter, the [[ behaves differently. With an atomic vector, if [[ is given an index outside the range of the vector or an invalid name, it raises an error: ```Error in x[["c"]] : subscript out of bounds```
+
+```
+x[["c"]]
+```
+```
+x[[5]]
+```
+
+ <h3 style="color:#cc00cc"> 20.5.4 Exercises </h3>
+ 
+
+<h4 style="color:#40bf40">
+1. Draw the following lists as nested sets:
+<p>
+* 1. ```list(a, b, list(c, d), list(e, f))```
+* 2. ```list(list(list(list(list(list(a))))))```
+</p>
+</h4>
+
+There are a variety of ways to draw these graphs.
+
+1. The nested set diagram for ```list(a, b, list(c, d), list(e, f))``` is:
+
+<div>
+<img src="list1.jpg" alt="Italian Trulli">
+</div>
+
+2. The drawing for nested  ```list(list(list(list(list(list(a))))))```
+<div>
+<img src="list2.jpg" alt="Italian Trulli">
+</div>
+
+<h4 style="color:#40bf40">
+2. What happens if you subset a tibble as if you’re subsetting a list? What are the key
+differences between a list and a tibble?
+</h4>
+
+Subsetting a tibble works the same way as a list; a data frame can be thought of as a list of columns. The key difference between a list and a tibble is that all the elements (columns) of a tibble must have the same length (number of rows). Lists can have vectors with different lengths as elements.
+
+```{r}
+x <- tibble(a = 1:2, b = 3:4)
+x[["a"]]
+```
+
+```{r}
+x["a"]
+```
+```{r}
+x[1]
+```
+
+```{r}
+x[1, ]
+```
+
+
+ <h3 style="color:#cc00cc"> 20.7.4 Exercises </h3>
+ 
+
+<h4 style="color:#40bf40">
+1. What does hms::hms(3600) return? How does it print? What primitive type is the
+augmented vector built on top of? What attributes does it use?
+</h4>
+
+```{r}
+x <- hms::hms(3600)
+class(x)
+```
+How does it print?
+
+```{r}
+print(x)
+```
+
+What primitive type is the augmented vector built on top of?
+
+```{r}
+typeof(x)
+```
+
+What attributes does it use?
+
+```{r}
+attributes(x)
+```
+
+
+<h4 style="color:#40bf40">
+2. Try and make a tibble that has columns with different lengths. What happens?
+</h4>
+
+if the column is length one it will repeat for the length of the other column(s), otherwise if it is not the same length it will return an error
+
+```
+tibble(x = 1:4, y = 5:6)
+```
+Error will prompt:
+
+```Error: Tibble columns must have compatible sizes. * Size 4: Existing data. * Size 2: Column `y`. i Only values of size one are recycled.```
+
+
+```{r}
+tibble(x = 1:5, y = 6)  #can have length 1 that repeats
+```
+
+
+
+<h4 style="color:#40bf40">
+3. Based on the definition above, is it ok to have a list as a column of a tibble?
+</h4>
+
+From the above, the error message was about vectors having different lengths. But there is nothing that prevents a tibble from having vectors of different types: doubles, character, integers, logical, factor, date. The later are still atomic, but they have additional attributes. So, maybe there won’t be an issue with a list vector as long as it is the same length.
+
+```{r}
+tibble(x = 1:3, y = list("a", 1, list(1:3)))
+```
+
+It works! I even used a list with heterogeneous types and there wasn’t an issue. 
+
+
+<h2 style="color:#ff6600"> D. Activity 8.4  </h2>
+
+The microbenchmark package is used for timing code.
+
+```{r}
+library("tidyverse")
+library("stringr")
+library("microbenchmark")
+library("nycflights13")
+```
+
+
+<h3 style="color:#cc00cc"> 21.2.1 Exercises </h3>
+
+<h4 style="color:#40bf40"> 
+1. Write for loops to:
+- a. Compute the mean of every column in mtcars.
+- b. Determine the type of each column in nyc flights13::flights.
+- c. Compute the number of unique values in each column of iris.
+- d. Generate 10 random normals for each of μ = –10, 0, 10, and 100. 
+<div>
+Think about the output, sequence, and body before you start writing the loop.
+</div>
+</h4>
+
+<b> a. To compute the mean of every column in mtcars. </b>
+```{r}
+
+output <- vector("double", length(mtcars))
+for (i in seq_along(mtcars)){
+  output[[i]] <- mean(mtcars[[i]])
+}
+output
+```
+<b> 2. Determine the type of each column in nycflights13::flights.</b>
+
+```{r}
+output <- vector("list", ncol(nycflights13::flights))
+names(output) <- names(nycflights13::flights)
+for (i in names(nycflights13::flights)) {
+  output[[i]] <- class(nycflights13::flights[[i]])
+}
+output
+```
+
+<b> 3. Compute the number of unique values in each column of iris. </b>
+
+```{r}
+output <- vector("integer", length(iris))
+for (i in seq_along(iris)){
+  output[[i]] <- unique(iris[[i]]) %>% length()
+}
+output
+```
+
+<b> 4. Generate 10 random normals for each of ```μ=−10,0,10, and 100```. </b>
+
+```{r}
+output <- vector("list", 4)
+input_means <- c(-10, 0, 10, 100)
+for (i in seq_along(output)){
+  output[[i]] <- rnorm(10, mean = input_means[[i]])
+}
+output
+```
+
+<h4 style="color:#40bf40"> 
+2. Eliminate the for loop in each of the following examples by taking advantage of an existing function that works with vectors:
+
+```{r}
+out <- ""
+
+for (x in letters) {
+ out <- stringr::str_c(out, x)
+}
+
+x <- sample(100)
+sd <- 0
+
+for (i in seq_along(x)) {
+ sd <- sd + (x[i] - mean(x)) ^ 2
+}
+
+sd <- sqrt(sd / (length(x) - 1))
+x <- runif(100)
+out <- vector("numeric", length(x))
+out[1] <- x[1]
+
+for (i in 2:length(x)) {
+ out[i] <- out[i - 1] + x[i]
+}
+```
+</h4>
+
+
+example:
+```{r}
+out <- ""
+for (x in letters) {
+  out <- stringr::str_c(out, x)
+}
+out
+```
+
+- We collapse letters into length-one character vector with all characters concatenated
+
+```{r}
+str_c(letters, collapse = "")
+```
+
+example:
+```{r}
+x <- sample(100)
+sd <- 0
+for (i in seq_along(x)) {
+  sd <- sd + (x[i] - mean(x)) ^ 2
+}
+sd <- sqrt(sd / (length(x) - 1))
+sd
+```
+- We calculate standard deviaiton of x
+```{r}
+sd(x)
+```
+
+example:
+```{r}
+x <- runif(100)
+out <- vector("numeric", length(x))
+out[1] <- x[1]
+for (i in 2:length(x)) {
+  out[i] <- out[i - 1] + x[i]
+}
+out
+```
+- Then we, calculate cumulative sum
+
+```{r}
+cumsum(x)
+```
+- The code above is calculating a cumulative sum. Use the function cumsum(). We will validate.
+```{r}
+all.equal(cumsum(x), out)
+```
+
+<h4 style="color:#40bf40"> 
+3. Combine your function writing and for loop skills:
+- a. Write a for loop that prints() the lyrics to the children’s song “Alice the Camel.”
+- b. Convert the nursery rhyme “Ten in the Bed” to a function. Generalize it to any number of people in any sleeping structure.
+- c. Convert the song “99 Bottles of Beer on the Wall” to a function. Generalize to any number of any vessel containing any liquid on any surface.
+</h4>
+
+The answers to each part follow.
+
+The lyrics for Alice the Camel are:
+```
+Alice the camel has five humps.
+Alice the camel has five humps.
+Alice the camel has five humps.
+So go, Alice, go.
+```
+
+This verse is repeated, each time with one fewer hump, until there are no humps. The last verse, with no humps, is:
+
+```
+Alice the camel has no humps.
+Alice the camel has no humps.
+Alice the camel has no humps.
+Now Alice is a horse.
+```
+
+We’ll do iteration from five to no humps, and print out a different last line if there are no humps.
+
+```{r}
+humps <- c("five", "four", "three", "two", "one", "no")
+for (i in humps) {
+  cat(str_c("Alice the camel has ", rep(i, 3), " humps.",
+    collapse = "\n"
+  ), "\n")
+  if (i == "no") {
+    cat("Now Alice is a horse.\n")
+  } else {
+    cat("So go, Alice, go.\n")
+  }
+  cat("\n")
+}
+```
+
+The lyrics for ```Ten in the Bed``` are:
+
+```
+Here we go!
+There were ten in the bed
+and the little one said,
+“Roll over, roll over.”
+So they all rolled over and one fell out.
+```
+
+This verse is repeated, each time with one fewer in the bed, until there is one left. That last verse is:
+
+```
+One! There was one in the bed
+and the little one said,
+“I’m lonely…”
+```
+
+```{r}
+numbers <- c(
+  "ten", "nine", "eight", "seven", "six", "five",
+  "four", "three", "two", "one"
+)
+for (i in numbers) {
+  cat(str_c("There were ", i, " in the bed\n"))
+  cat("and the little one said\n")
+  if (i == "one") {
+    cat("I'm lonely...")
+  } else {
+    cat("Roll over, roll over\n")
+    cat("So they all rolled over and one fell out.\n")
+  }
+  cat("\n")
+}
+```
+
+The lyrics of Ninety-Nine Bottles of Beer on the Wall are
+```
+99 bottles of beer on the wall, 99 bottles of beer.
+Take one down, pass it around, 98 bottles of beer on the wall
+
+This verse is repeated, each time with one few bottle, until there are no more bottles of beer. The last verse is
+
+No more bottles of beer on the wall, no more bottles of beer.
+We’ve taken them down and passed them around; now we’re drunk and passed out!
+
+For the bottles of beer, I define a helper function to correctly print the number of bottles.
+```
+
+
+```{r}
+bottles <- function(n) {
+  if (n > 1) {
+    str_c(n, " bottles")
+  } else if (n == 1) {
+    "1 bottle"
+  } else {
+    "no more bottles"
+  }
+}
+
+beer_bottles <- function(total_bottles) {
+  # print each lyric
+  for (current_bottles in seq(total_bottles, 0)) {
+    # first line
+    cat(str_to_sentence(str_c(bottles(current_bottles), " of beer on the wall, ", bottles(current_bottles), " of beer.\n")))   
+    # second line
+    if (current_bottles > 0) {
+      cat(str_c(
+        "Take one down and pass it around, ", bottles(current_bottles - 1),
+        " of beer on the wall.\n"
+      ))          
+    } else {
+      cat(str_c("Go to the store and buy some more, ", bottles(total_bottles), " of beer on the wall.\n"))                }
+    cat("\n")
+  }
+}
+beer_bottles(3)
+
+```
+
+<h4 style="color:#40bf40"> 
+4. It’s common to see for loops that don’t preallocate the output and instead increase the length of a vector at each step:
+```{r}
+output <- vector("integer", 0)
+for (i in seq_along(x)) {
+  output <- c(output, lengths(x[[i]]))
+}
+output
+```
+
+How does this affect performance? Design and execute an
+experiment.
+</h4>
+
+```{r}
+preallocate <- function(){
+x <- vector("double", 100)
+  for (i in seq_along(x)){
+    x[i] <- rnorm(1)
+  }
+}
+
+growing <- function(){
+  x <- c(0)
+    for (i in 1:100){
+      x[i] <- rnorm(1)
+  }
+}
+
+microbenchmark::microbenchmark(
+  space = preallocate(),
+  no_space = growing(),
+  times = 20
+)  
+```
+
+In this example,we see roughly 35% better performance when creating ahead of time. 
+note: if you can do these operations with vectorized approach though – they’re often much faster
+
+```{r}
+microbenchmark::microbenchmark(
+  space = preallocate(),
+  no_space = growing(),
+  vector = rnorm(100),
+  times = 20
+)
+```
+If you noticed, vectorized was > 10x faster.
+
+
+<h3 style="color:#cc00cc"> 21.3.5 Exercises </h3>
+
+<h4 style="color:#40bf40"> 
+1. Imagine you have a directory full of CSV files that you want to
+read in. You have their paths in a vector, files <-
+dir("data/", pattern = "\\.csv$", full.names = TRUE),
+and now want to read each one with read_csv(). Write the for
+loop that will load them into a single data frame.
+</h4>
+
+- To start this problem, I first created a file directory, and then wrote in 26 csvs each with the most popular name from each year since 1880 for a particular letter35.
+- Next I read these into a single dataframe with a ```for``` loop
+
+```{r}
+files <- dir("data/", pattern = "\\.csv$", full.names = TRUE)
+files
+```
+
+Since, the number of files is known, pre-allocate a list with a length equal to the number of files.
+
+```{r}
+df_list <- vector("list", length(files))
+```
+
+Then, read each file into a data frame, and assign it to an element in that list. The result is a list of data frames.
+
+```{r}
+for (i in seq_along(files)) {
+  df_list[[i]] <- read_csv(files[[i]])
+}
+print(df_list)
+```
+
+Finally, use use bind_rows() to combine the list of data frames into a single data frame.
+
+```{r}
+df <- bind_rows(df_list)
+print(df)
+```
+
+
+Another way is I could have pre-allocated a list with the names of the files.
+
+```{r}
+df2_list <- vector("list", length(files))
+names(df2_list) <- files
+for (fname in files) {
+  df2_list[[fname]] <- read_csv(fname)
+}
+```
+
+<h4 style="color:#40bf40">
+2. What happens if you use for (nm in names(x)) and x has no
+names? What if only some of the elements are named? What if
+the names are not unique?
+</h4>
+
+```{r}
+x <- list(1:10, 11:18, 19:25)
+for (nm in names(x)) {
+  print(x[[nm]])
+}
+```
+
+- each iteration produces an error, so nothing is written
+
+What if only some of the elements are named?
+
+```{r}
+x <- list(a = 1:10, 11:18, c = 19:25)
+for (nm in names(x)) {
+  print(x[[nm]])
+}
+```
+
+- you have output for those with names and NULL for those without
+What if the names are not unique?
+
+```{r}
+x <- list(a = 1:10, a = 11:18, c = 19:25)
+for (nm in names(x)) {
+  print(x[[nm]])
+}
+```
+
+- it prints the first position with the name
+
+
+
+<h4 style="color:#40bf40">
+3. Write a function that prints the mean of each numeric column in a data frame, along with its name. For example,
+show_mean(iris) would print:
+
+```{r eval=FALSE}
+show_mean(iris)
+# > Sepal.Length: 5.84
+# > Sepal.Width:  3.06
+# > Petal.Length: 3.76
+# > Petal.Width:  1.20
+```
+</h4>
+
+```{r}
+show_mean <- function(df, digits = 2) {
+   # Get max length of all variable names in the dataset
+   maxstr <- max(str_length(names(df)))
+   for (nm in names(df)) {
+     if (is.numeric(df[[nm]])) {
+       cat(
+         str_c(str_pad(str_c(nm, ":"), maxstr + 1L, side = "right"),
+           format(mean(df[[nm]]), digits = digits, nsmall = digits),
+           sep = " "
+         ),
+         "\n"
+       )
+     }
+   }
+ }
+```
+
+Let's try to run and check:
+```{r}
+show_mean(iris)
+```
+If you noticed, I used ```str_pad()```, and ```str_length()``` to ensure that the space given to the variable names is the same. 
+
+
+<h4 style="color:#40bf40">
+4. What does this code do? How does it work?
+```{r}
+trans <- list(
+  disp = function(x) x * 0.0163871,
+  am = function(x) {
+    factor(x, labels = c("auto", "manual"))
+  }
+)
+for (var in names(trans)) {
+  mtcars[[var]] <- trans[[var]](mtcars[[var]])
+}
+```
+</h4>
+
+This code mutates the disp and am columns:
+
+- ```disp``` is multiplied by 0.0163871
+- ```am``` is replaced by a factor variable.
+The code works by looping over a named list of functions. It calls the named function in the list on the column of mtcars with the same name, and replaces the values of that column.
+
+This is a function.
+
+```{r}
+trans[["disp"]]
+```
+
+This applies the function to the column of mtcars with the same name
+
+```{r}
+trans[["disp"]](mtcars[["disp"]])
+```
+
+
+
+<h3 style="color:#cc00cc"> 21.4.1 Exercises </h3>
+
+<h4 style="color:#40bf40">
+1. Read the documentation for apply(). In the second case, what two for loops does it generalize?
+</h4>
+
+- It allows you to input either 1 or 2 for the MARGIN argument, which corresponds with looping over either the rows or the columns.
+
+The ```apply()``` function is used like apply(X, MARGIN, FUN, ...), where X is a matrix or array, FUN is a function to apply, and ... are additional arguments passed to FUN.
+
+When MARGIN = 1, then the function is applied to each row. For example, the following example calculates the row means of a matrix.
+
+When MARGIN = 1, then the function is applied to each row. For example, the following example calculates the row means of a matrix.
+
+```{r}
+X <- matrix(rnorm(15), nrow = 5)
+X
+```
+```{r}
+apply(X, 1, mean)
+```
+This is equivalent to this for-loop.
+
+```{r}
+X_row_means <- vector("numeric", length = nrow(X))
+for (i in seq_len(nrow(X))) {
+  X_row_means[[i]] <- mean(X[i, ])
+}
+X_row_means
+```
+
+```{r}
+X <- matrix(rnorm(15), nrow = 5)
+X
+```
+
+When ```MARGIN = 2```, ```apply()``` is equivalent to a for-loop looping over columns.
+
+```{r}
+apply(X, 2, mean)
+```
+
+```{r}
+ X_col_means <- vector("numeric", length = ncol(X))
+ for (i in seq_len(ncol(X))) {
+   X_col_means[[i]] <- mean(X[, i])
+ }
+X_col_means
+```
+
+<h4 style="color:#40bf40">
+2. Adapt col_summary() so that it only applies to numeric columns. You might want to start with an is_numeric() function that returns a logical vector that has a TRUE corresponding to each numeric column.
+</h4>
+
+Original col_summary function
+```{r}
+col_summary <- function(df, fun) {
+  out <- vector("double", length(df))
+  for (i in seq_along(df)) {
+    out[i] <- fun(df[[i]])
+  }
+  out
+}
+```
+
+The adapted version adds extra logic to only apply the function to numeric columns.
+
+```{r}
+col_summary_gen <- function(df, fun) {
+  # create an empty vector which will store whether each
+  # column is numeric
+  numeric_cols <- vector("logical", length(df))
+  # test whether each column is numeric
+  for (i in seq_along(df)) {
+    numeric_cols[[i]] <- is.numeric(df[[i]])
+  }
+  # find the indexes of the numeric columns
+  idxs <- which(numeric_cols)
+  # find the number of numeric columns
+  n <- sum(numeric_cols)
+  # create a vector to hold the results
+  out <- vector("double", n)
+  # apply the function only to numeric vectors
+  for (i in seq_along(idxs)) {
+    out[[i]] <- fun(df[[idxs[[i]]]])
+  }
+  # name the vector
+  names(out) <- names(df)[idxs]
+  out
+}
+```  
+
+
+Let’s test that col_summary_gen() works by creating a small data frame with some numeric and non-numeric columns.
+
+```{r}
+df <- tibble(
+  X1 = c(1, 2, 3),
+  X2 = c("A", "B", "C"),
+  X3 = c(0, -1, 5),
+  X4 = c(TRUE, FALSE, TRUE)
+)
+col_summary_gen(df, mean)
+```
+
+
+<h3 style="color:#cc00cc"> 21.5.3 Exercises </h3>
+
+<h4 style="color:#40bf40">
+1. Write code that uses one of the map functions to:
+- 1. Compute the mean of every column in mtcars .
+- 2. Determine the type of each column in nycflights13::flights .
+- 3. Compute the number of unique values in each column of iris .
+- 4. Generate 10 random normals from distributions with means of -10, 0, 10, and 100.
+</h4>
+
+<b> 1. Compute the mean of every column in mtcars. </b>
+
+```{r}
+purrr::map_dbl(mtcars, mean)
+```
+
+<b> 2. Determine the type of each column in nycflights13::flights. </b>
+
+```{r}
+purrr::map_chr(flights, typeof)
+```
+<b> 3. Compute the number of unique values in each column of iris. </b>
+
+```{r}
+purrr::map(iris, unique) %>% 
+  map_dbl(length)
+```
+
+<b> 4. Generate 10 random normals for each of  μ=−10,0,10, and 100.</b>
+
+```{r}
+purrr::map(c(-10, 0, 10, 100), rnorm, n = 10)
+```
+
+```{r}
+purrr::map_dbl(flights, ~mean(is.na(.x)))
+```
+
+<h4 style="color:#40bf40">
+2. How can you create a single vector that for each column in a data frame indicates whether or not it’s a factor?
+</h4>
+
+```{r}
+purrr::map_lgl(iris, is.factor)
+```
+
+
+<h4 style="color:#40bf40">
+3. What happens when you use the map functions on vectors that aren’t lists? What does
+map(1:5, runif) do? Why?
+</h4>
+Map functions work with any vectors, not just lists, but the output is always a list.
+
+```{r}
+purrr::map(1:5, rnorm)
+```
+
+- It runs on each item in the vector.
+- map() runs on each element item within the input, i.e .x[[1]], .x[[2]], .x[[n]]. The elements of a numeric vector are scalars (or technically length 1 numeric vectors)
+- In this case then it is passing the values 1, 2, 3, 4, 5 into the first argument of rnorm for each run, hence pattern above.
+
+<h4 style="color:#40bf40">
+4. What does map(-2:2, rnorm, n = 5) do? Why? What does map_dbl(-2:2, rnorm, n
+= 5) do? Why?
+</h4>
+
+```{r}
+map(-2:2, rnorm, n = 5)
+```
+* It makes 5 vectors each of length 5 with the values centered at the means of -2,-1, 0, 1, 2 respectively.
+* The reason is that the default filling of the first argument is already named by the defined input of ‘n = 5’, therefore, the inputs are instead going to the 2nd argument, and hence become the mean of the different rnorm calls.
+
+
+<h4 style="color:#40bf40">
+5. Rewrite map(x, function(df) lm(mpg ~ wt, data = df)) to eliminate the anonymous
+function.
+</h4>
+
+```{r}
+x <- split(mtcars, mtcars$cyl)
+map(x, ~ lm(mpg ~ wt, data = .))
+```
+
+<h3 style="color:#cc00cc"> 21.9.3 Exercises </h3>
+
+<h4 style="color:#40bf40">
+1. Implement your own version of every() using a for loop. Compare
+it with purrr::every(). What does purrr’s version do that
+your version doesn’t?
+</h4>
+
+```{r}
+every_loop <- function(x, fun, ...) {
+  output <- vector("list", length(x))
+  for (i in seq_along(x)) {
+  output[[i]] <- fun(x[[i]])
+  }
+  total <- flatten_lgl(output)
+  sum(total) == length(x)
+}
+
+x <- list(flights, mtcars, iris)
+every_loop(x, is.data.frame)
+```
+
+<h4 style="color:#40bf40">
+2. Create an enhanced col_sum() that applies a summary function
+to every numeric column in a data frame.
+</h4>
+
+```{r}
+col_summary_enhance <- function(x,fun){
+  x %>% 
+    keep(is.numeric) %>% 
+    purrr::map_dbl(fun)
+}
+col_summary_enhance(mtcars, median)
+```
+If you noticed, I used use ```map_dbl``` to apply the function to all the columns, and ```keep``` to only select numeric columns.
+
+
+<h4 style="color:#40bf40">
+3. A possible base R equivalent of ```col_sum()``` is:
+
+```{r}
+col_sum3 <- function(df, f) {
+is_num <- sapply(df, is.numeric)
+df_num <- df[, is_num]
+sapply(df_num, f)
+}
+```
+But it has a number of bugs as illustrated with the following
+inputs:
+```{r}
+df <- tibble(
+x = 1:3,
+y = 3:1,
+z = c("a", "b", "c")
+)
+# OK
+col_sum3(df, mean)
+# Has problems: don't always return numeric vector
+col_sum3(df[1:2], mean)
+col_sum3(df[1], mean)
+```
+This code below will show an error which point to the part of the function that has some bugs.
+```
+col_sum3(df[0], mean)
+```
+```
+Error: Must subset columns with a valid subscript vector. x Subscript `is_num` has the wrong type `list`. i It must be logical, numeric, or character.
+```
+What causes the bugs?
+</h4>
+
+
+
+- The vector output is not always consistent in it’s output type. Also, returns error when inputting an empty list due to indexing issue.
+
+This s caused by the behavior of ```sapply()```. The ```sapply()``` function does not guarantee the type of vector it returns, and will returns different types of vectors depending on its inputs. If no columns are selected, instead of returning an empty numeric vector, it returns an empty list. This causes an error since we can’t use a list with ```[```.
+
+
+
+<h1 style="color:blue"> CONCLUSIONS </h1>
+
+<p>
+While doing the activities, I have learned the following:
+</p>
+
+<b> <u> PIPES </u> </b>
+
+<p>
+- The pipe allows you to create a logical order to code.
+- The pipe won’t work for two classes on functions.
+
+    Functions that use the current environment, like ```assign()```, ```get()```, and ```load()```.
+    Functions that use lazy evaluation, like ```tryCatch()```, ```try()```, ```suppressMessages()```, and ```suppressWarnings()```.
+
+- There are several variations of the pipe operator available.
+</p>
+
+<t>
+1. A particularly handy operator is the assignment pipe ```magrittr::%<>%```. This operator should be the left-most pipe of any sequence of pipes. In addition to piping the dataset on the left into the function on the right the result coming out of the right-hand pipeline is piped back to the original variable. Thus, we overwrite the original contents in memory with the results from the pipeline.
+
+2, Another useful operation is the tee-pipe ```magrittr::%T>%``` which causes the function that follows to be run as a side-pipe while piping the same data into that function and also into the next function. The output from the function immediately following the tee-pipe operator is ignored. A common use case is to '''base::print()''' the result of some data processing steps whilst continuing on to assign the dataset itself to a variable.
+</t>
+
+<p>
+- It’s best not to use the pipe when.
+
+    1. Your pipes are longer than 10 steps
+    2. You have multiple inputs and outputs
+    3. You are expressing complex relationships
+</p>
+
+<p>
+<u> Just an important note if you need to know more about pipes and other topics</u>
+A key skill of any programmer, including those programming over data, is the ability to identify how to access the full power of our tools. The breadth and depth of the capabilities of R means that there is much to learn around both the basics of R programming and the multitude of packages that support the data scientist. Thus, don't get shy to access HELP.
+<p>
+
+
+<b> <u> FUNCTIONS </u> </b>
+<p>
+- There are three steps to creating a function:
+
+    1. Pick a name, like resize01().
+    2. List the inputs, or arguments inside function().
+    3. Place the code in the body { code }.
+</p>
+
+<p>
+- The Boolean operator ! (“not”) returns TRUE if the vectors compared do not obey the logical comparisons.
+- The code for a missing data entry in R is NA. The code should be used in vectors and data frames as a placeholder wherever a data entry is missing. R uses the code NaN (“not a number”) when a numerical operation is nonsensical or undefined. Additional codes Inf and -Inf are returned when a numerical operation is positively or negatively infinite.
+- R execute a statement or block of statements conditionally using an '''if''' and ''ifelse''' command . The if command takes the following form:
+```
+if ( condition ) {
+statement 1a
+statement 1b
+⋮
+} elseif {
+statement 2a
+statement 2b
+⋮
+} else {
+statement 3a
+statement 3b
+⋮
+}
+```
+- The statements in the if braces are executed only if the condition results in a logical TRUE. The else {} portion is optional and is executed if the condition is FALSE.
+
+<p>
+
+</p>
+
+<b> <u> VECTORS </u> </b>
+
+<p>
+- Just like any high-level programming languages, a vector is just a group of primitive values of the same type. It can be a group of numbers, true/false values, texts, and values of some other type. Although there are several types of vectors in R, they are distinct from each other in the type of elements they store.
+</p>
+<p>
+There are two types of vectors.
+</p>
+<p>
+- Atomic vectors, of which there are six types: logical, integer and double (numeric), character, complex, and raw.
+- Lists, which are sometimes called recursive vectors because lists can contain other lists.
+Atomic vectors are homogeneous, while lists can be heterogeneous.
+</p>
+
+
+<p>
+NULL is often used to represent the absence of a vector while NA which is used to represent the absence of a value in a vector.
+</p>
+
+<b> <u> LOOPS / ITERATIONS </u> </b>
+<p>
+- I learned the syntax of assignment, conditional expressions, and loops. I got to know the naming rules of variables and how to walk around. In conditional expressions, I learned how to use the ```if``` statement
+as either a statement or an expression, and how ```ifelse()```is distinct from if when dealing with vectors. 
+
+- In the topic on loops, I learned about the similarities and differences between for loops and while loops while will help me being equipped with the basic expressions to control the logic flow of an R program.
+In loops, elements of a vector can be picked out of the vector by using one or more indexes.
+
+</p>
+
