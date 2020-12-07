@@ -10,7 +10,7 @@ output:
  <h3> This is the answers of the exercise by Junmar Sales II </h3>
  <h3> Email: 92922@usc.edu.ph </h3>
  <h3> Dated 06 December 2020. </h3>
- <h3>  You can also see this on my github pages: <a href="https://92922.github.io/dist/MEE621_PipesFunctionsIterationsVectors.html" >MEE 621 - Activity 9 Models</a>  </h3>
+ <h3>  You can also see this on my github pages: <a href="https://92922.github.io/dist/MEE621_Models.html" >MEE 621 - Activity 9 Models</a>  </h3>
 
 
 <h1 style="color:blue"> INTRODUCTIONS </h1>
