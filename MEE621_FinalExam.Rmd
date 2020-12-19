@@ -1,0 +1,202 @@
+---
+title: "MEE 621 - Final Examination AY2020-2021"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  html_notebook: default
+---
+
+ <h3> This is the answers of the exercise by Junmar Sales II </h3>
+ <h3> Email: 92922@usc.edu.ph </h3>
+ <h3> Dated: 19 December 2020. </h3>
+ <h3>  You can also see this on my github pages: <a href="https://92922.github.io/dist/MEE621_FInalExam.html" >MEE 621 - Final Examination AY2020-2021</a>  </h3>
+
+
+<h1 style="color:blue"> ANSWERS TO QUESTIONS</h1>
+
+Let's load the prerequisite libraries, we have assumed that packages has been installed.
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(readxl)
+library(purrr)
+library(lubridate)
+library(broom)
+library(ggpubr)
+
+```
+Import data from excel file and rename columns. I prefer to single word column names.
+
+```{r}
+
+my_dataset <- read_xlsx(
+  "MEE621_Data.xlsx",
+  sheet = NULL,
+  range = NULL,
+  col_names = TRUE,
+  col_types = NULL,
+  na = "",
+  trim_ws = TRUE,
+  progress = readxl_progress(),
+  .name_repair = "unique"
+)
+```
+
+
+<h2 style="color:green">
+1.) Perform exploration analysis. In your analysis, make a generalization on what’s the relationship of the power consumption to the temperature of the households.
+</h2>
+
+```{r}
+str(my_dataset)
+```
+Check if our dataset is a tibble
+
+```{r}
+is_tibble(my_dataset)
+```
+
+Let's convert date and time to POSIX time
+```{r}
+my_dataset$`Date and Time` <- lubridate::ymd_hms(c(my_dataset$`Date and Time`))
+
+```
+
+Please take note that Date and Time is recognized as 'chr' or character, not in Datetime format.
+Temperation and power are recogmized as 'num' or number.
+
+
+```{r}
+p1 <- ggplot(data = my_dataset, aes(x = `Date and Time`, y = `Temperature (degree C)`,)) +
+  geom_line(color='red') + theme_minimal() + 
+      theme(axis.title.x = element_blank(), axis.text.x = element_blank())
+``` 
+```{r}
+p2 <- ggplot(data = my_dataset, aes(x = `Date and Time`, y = `Power (W)`,)) +
+  geom_line(color='darkblue') + theme_minimal() + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=90))
+
+```
+
+```{r}
+p3 <- ggplot(data = my_dataset, aes(x = `Date and Time`, y = `No. of Occupants`,)) +
+  geom_line(color='orange') + theme_minimal() + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=90))
+
+```
+
+
+```{r}
+p4 <- ggplot(data = my_dataset, aes(x = `Date and Time`, y = `Income (PhP)`,)) +
+  geom_line(color='magenta') + theme_minimal() + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=90))
+
+```
+
+Timelapse data can be visualized as a line plot with years on the x-axis and counts on the y-axis:
+```{r}
+library(grid)
+grid.newpage()
+grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), ggplotGrob(p3),ggplotGrob(p4), size = "last"))
+```
+If you observed, the power increases as temperature increases then it decrease eventually as the tempwerature decrease.
+
+
+<h2 style="color:green">
+2.) Using a relevant package in R, determine and discuss the distribution of the data. Present a tabulated summary of the data analytics.
+</h2>
+
+```{r}
+summary(my_dataset)
+```
+We have noticed that the Temperature median and mean are 28.64 and 28.89 with maximum temperature at 39.40.
+
+
+To check whether the dependent variable, Power (W) follows a normal distribution, use the hist() function.
+```{r}
+hist(my_dataset$`Power (W)`)
+```
+The distribution of observations is definitely not bell-shaped (it looks exponential decay), so we cannot proceed with the linear regression.
+
+<h2 style="color:green">
+3.) Perform a regression analysis to determine the relationship between the dependent variable (power consumption) and independent variables (temperature, income, and the number of occupants). Discuss your answer together the resulting graphs, tables, or any figures you may want to present to show the relationship.
+</h2>
+
+In #2 we said the relationship is not linear, let's confirm that the relationship between the independent and dependent variable is not linear. We can test this visually with a scatter plot to see if the distribution of data points could be described with a straight line.
+
+```{r}
+plot(`Power (W)` ~ `Temperature (degree C)`, data = my_dataset)
+```
+The relationship seems NOT linear.
+
+```{r}
+my_dataset.lm <- lm(`Power (W)` ~ `Temperature (degree C)`, data = my_dataset)
+
+summary(my_dataset.lm)
+```
+</b> Simple regression </b>
+
+We can run plot(my_dataset.lm) to check whether the observed data meets our model assumptions:
+
+```{r}
+par(mfrow=c(2,2))
+plot(my_dataset.lm)
+par(mfrow=c(1,1))
+```
+Residuals are the unexplained variance. They are not exactly the same as model error, but they are calculated from it, so seeing a bias in the residuals would also indicate a bias in the error.
+
+The most important thing to look for is that the red lines representing the mean of the residuals are all basically horizontal and centered around zero. This means there are no outliers or biases in the data that would make a linear regression invalid.
+
+In the <b> Normal Q-Qplot </b> in the top right, we can see that the real residuals from our model form  a exponential line with the theoretical residuals from a perfect model.
+
+Based on these residuals, we can say that our model did not meet the assumption of homoscedasticity.
+
+Let's check the Power against the number of occupants.
+
+```{r}
+my_dataset.lm2 <- lm(`Power (W)` ~ `No. of Occupants`, data = my_dataset)
+
+summary(my_dataset.lm2)
+```
+```{r}
+par(mfrow=c(2,2))
+plot(my_dataset.lm2)
+par(mfrow=c(1,1))
+```
+
+Let's check the Power against the number of occupants.
+
+```{r}
+my_dataset.lm3 <- lm(`Power (W)` ~ `Income (PhP)`, data = my_dataset)
+
+summary(my_dataset.lm3)
+```
+```{r}
+par(mfrow=c(2,2))
+plot(my_dataset.lm3)
+par(mfrow=c(1,1))
+```
+
+WE will also some other graphs.
+
+```{r}
+ ggplot(data = my_dataset) +
+  geom_bar(mapping = aes(x = `Date and Time`),color = 'darkgreen')
+```
+Let's check how does the histogram looks like if the Power is below the mean value of 30.599
+```{r}
+smaller <- my_dataset %>% 
+  filter(`Power (W)` < 30.599)
+  
+ggplot(data = smaller, mapping = aes(x = `Date and Time`)) +
+  geom_histogram(color="orange", fill="magenta")
+```
+
+How about if Power is greater the mean value of 30.599
+```{r}
+bigger <- my_dataset %>% 
+  filter(`Power (W)` > 30.599)
+  
+ggplot(data = bigger, mapping = aes(x = `Date and Time`)) +
+  geom_histogram(color="blue", fill="yellow")
+```
